@@ -24,7 +24,7 @@ angular.module('exceptionless', [])
                     $ExceptionlessClient.createUnhandledException(exception, '$exceptionHandler').setMessage(cause).submit();
                 };
             }]);
-        if($ExceptionlessClient.logEnabled){
+        if($ExceptionlessClient.config.logEnabled){
         	        $provide.decorator('$log', ['$delegate', function ($delegate) {
                 function decorateRegularCall(property, logLevel) {
                     var previousFn = $delegate[property];
@@ -46,53 +46,58 @@ angular.module('exceptionless', [])
 
     }])
     .run(['$rootScope', '$ExceptionlessClient', function ($rootScope, $ExceptionlessClient) {
-        $rootScope.$on('$routeChangeSuccess', function (event, next, current) {
-            if (!current) {
-                return;
-            }
-            $ExceptionlessClient.createFeatureUsage(current.name)
-                .setProperty('next', next)
-                .setProperty('current', current)
-                .submit();
-        });
-        $rootScope.$on('$routeChangeError', function (event, current, previous, rejection) {
-            $ExceptionlessClient.createUnhandledException(new Error(rejection), '$routeChangeError')
-                .setProperty('current', current)
-                .setProperty('previous', previous)
-                .submit();
-        });
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-            if (!toState || toState.name === 'otherwise') {
-                return;
-            }
-            $ExceptionlessClient.createFeatureUsage(toState.controller || toState.name)
-                .setProperty('toState', toState)
-                .setProperty('toParams', toParams)
-                .setProperty('fromState', fromState)
-                .setProperty('fromParams', fromParams)
-                .submit();
-        });
-        $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
-            if (!unfoundState) {
-                return;
-            }
-            $ExceptionlessClient.createNotFound(unfoundState.to)
-                .setProperty('unfoundState', unfoundState)
-                .setProperty('fromState', fromState)
-                .setProperty('fromParams', fromParams)
-                .submit();
-        });
-        $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams, error) {
-            if (!error) {
-                return;
-            }
-            $ExceptionlessClient.createUnhandledException(error, '$stateChangeError')
-                .setProperty('toState', toState)
-                .setProperty('toParams', toParams)
-                .setProperty('fromState', fromState)
-                .setProperty('fromParams', fromParams)
-                .submit();
-        });
+        
+        if($ExceptionlessClient.config.routeLogEnabled) {
+        
+            $rootScope.$on('$routeChangeSuccess', function (event, next, current) {
+                if (!current) {
+                    return;
+                }
+                $ExceptionlessClient.createFeatureUsage(current.name)
+                    .setProperty('next', next)
+                    .setProperty('current', current)
+                    .submit();
+            });
+            $rootScope.$on('$routeChangeError', function (event, current, previous, rejection) {
+                $ExceptionlessClient.createUnhandledException(new Error(rejection), '$routeChangeError')
+                    .setProperty('current', current)
+                    .setProperty('previous', previous)
+                    .submit();
+            });
+            $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+                if (!toState || toState.name === 'otherwise') {
+                    return;
+                }
+                $ExceptionlessClient.createFeatureUsage(toState.controller || toState.name)
+                    .setProperty('toState', toState)
+                    .setProperty('toParams', toParams)
+                    .setProperty('fromState', fromState)
+                    .setProperty('fromParams', fromParams)
+                    .submit();
+            });
+            $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
+                if (!unfoundState) {
+                    return;
+                }
+                $ExceptionlessClient.createNotFound(unfoundState.to)
+                    .setProperty('unfoundState', unfoundState)
+                    .setProperty('fromState', fromState)
+                    .setProperty('fromParams', fromParams)
+                    .submit();
+            });
+            $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams, error) {
+                if (!error) {
+                    return;
+                }
+                $ExceptionlessClient.createUnhandledException(error, '$stateChangeError')
+                    .setProperty('toState', toState)
+                    .setProperty('toParams', toParams)
+                    .setProperty('fromState', fromState)
+                    .setProperty('fromParams', fromParams)
+                    .submit();
+            });
+        }
+        
         $rootScope.$on('$destroy', function () {
             $ExceptionlessClient.config.queue.process();
         });
