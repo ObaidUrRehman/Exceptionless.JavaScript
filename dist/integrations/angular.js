@@ -24,7 +24,8 @@ angular.module('exceptionless', [])
                     $ExceptionlessClient.createUnhandledException(exception, '$exceptionHandler').setMessage(cause).submit();
                 };
             }]);
-        $provide.decorator('$log', ['$delegate', function ($delegate) {
+        if($ExceptionlessClient.logEnabled){
+        	        $provide.decorator('$log', ['$delegate', function ($delegate) {
                 function decorateRegularCall(property, logLevel) {
                     var previousFn = $delegate[property];
                     return $delegate[property] = function () {
@@ -41,6 +42,8 @@ angular.module('exceptionless', [])
                 $delegate.error = decorateRegularCall('error', 'Error');
                 return $delegate;
             }]);
+        }
+
     }])
     .run(['$rootScope', '$ExceptionlessClient', function ($rootScope, $ExceptionlessClient) {
         $rootScope.$on('$routeChangeSuccess', function (event, next, current) {
